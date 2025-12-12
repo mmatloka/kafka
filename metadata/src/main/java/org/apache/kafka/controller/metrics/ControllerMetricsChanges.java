@@ -138,7 +138,9 @@ class ControllerMetricsChanges {
             isWithoutPreferredLeader = !next.hasPreferredLeader();
             // take current all replicas as ISR if prev is null (new created partition), so we won't treat it as unclean election.
             int[] prevIsr = prev != null ? prev.isr : next.replicas;
-            if (!PartitionRegistration.electionWasClean(next.leader, prevIsr)) {
+            // check if at the same step the partition we are adding to ISR is becoming the leader, don't treat that as unclean election.
+            int[] prevAddingReplicas = prev != null ? prev.addingReplicas : new int[]{};
+            if (!PartitionRegistration.electionWasClean(next.leader, prevIsr, prevAddingReplicas)) {
                 uncleanLeaderElection++;
             }
         }
