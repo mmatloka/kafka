@@ -346,8 +346,8 @@ public class PartitionRegistration {
         return builder.toString();
     }
 
-    public void maybeLogPartitionChange(Logger log, String description, PartitionRegistration prev) {
-        if (!electionWasClean(leader, prev.isr, prev.addingReplicas)) {
+    public void maybeLogPartitionChange(Logger log, String description, PartitionRegistration prev, PartitionRegistration next) {
+        if (!electionWasClean(leader, prev.isr, next.addingReplicas)) {
             log.info("UNCLEAN partition change for {}: {}", description, diff(prev));
         } else if (log.isDebugEnabled()) {
             log.debug("partition change for {}: {}", description, diff(prev));

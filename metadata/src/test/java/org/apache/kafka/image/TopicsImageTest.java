@@ -353,6 +353,66 @@ public class TopicsImageTest {
     }
 
     @Test
+    public void testAddingPartitionToLeader() {
+        int localId = 3;
+        Uuid zooId = Uuid.fromString("0hHJ3X5ZQ-CFfQ5xgpj90w");
+
+        List<TopicImage> topics = new ArrayList<>();
+        topics.add(
+                newTopicImage(
+                        "zoo",
+                        zooId,
+                        newPartition(new int[]{0, 1, localId}),
+                        newPartition(new int[]{localId, 1, 2}),
+                        newPartition(new int[]{0, 1, localId}),
+                        newPartition(new int[]{localId, 1, 2}),
+                        newPartition(new int[]{0, 1, 2}),
+                        newPartition(new int[]{0, 1, 2})
+                )
+        );
+        TopicsImage image = new TopicsImage(newTopicsByIdMap(topics), newTopicsByNameMap(topics));
+
+        // adding replica to leader
+        ApiMessageAndVersion topicRecord =
+                new ApiMessageAndVersion(
+                        new PartitionChangeRecord()
+                                .setTopicId(zooId)
+                                .setPartitionId(4)
+                                .setLeader(localId)
+                                .setIsr(Arrays.asList(localId, 1, 2))
+                                .setReplicas(Arrays.asList(localId, 1, 2))
+                                .setAddingReplicas(Arrays.asList(localId)),
+                        PARTITION_CHANGE_RECORD.highestSupportedVersion()
+                );
+
+        TopicsDelta delta = new TopicsDelta(image);
+        RecordTestUtils.replayOne(delta, topicRecord);
+
+        LocalReplicaChanges changes = delta.localChanges(localId);
+        assertEquals(
+                Collections.emptySet(),
+                changes.deletes()
+        );
+        assertEquals(
+                new HashSet<>(Arrays.asList(new TopicPartition("zoo", 4))),
+                changes.electedLeaders().keySet()
+        );
+        assertEquals(
+                new HashSet<>(Arrays.asList(new TopicPartition("zoo", 4))),
+                changes.leaders().keySet()
+        );
+        assertEquals(
+                Collections.emptySet(),
+                changes.followers().keySet()
+        );
+
+        TopicsImage finalImage = delta.apply();
+        List<ApiMessageAndVersion> imageRecords = getImageRecords(image);
+        imageRecords.add(topicRecord);
+        testToImage(finalImage, Optional.of(imageRecords));
+    }
+
+    @Test
     public void testLocalReassignmentChanges() {
         int localId = 3;
         Uuid zooId = Uuid.fromString("0hHJ3X5ZQ-CFfQ5xgpj90w");
