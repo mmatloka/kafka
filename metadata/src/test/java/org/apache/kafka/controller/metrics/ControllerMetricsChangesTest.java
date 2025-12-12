@@ -155,6 +155,8 @@ public class ControllerMetricsChangesTest {
 
     static final TopicDelta TOPIC_DELTA2;
 
+    static final TopicDelta TOPIC_DELTA3;
+
     static {
         ImageWriterOptions options = new ImageWriterOptions.Builder().
                 setMetadataVersion(MetadataVersion.IBP_3_7_IV0).build(); // highest MV for PartitionRecord v0
@@ -177,6 +179,13 @@ public class ControllerMetricsChangesTest {
                 setLeader(1));
         TOPIC_DELTA2.replay((PartitionRecord) fakePartitionRegistration(NORMAL).
                 toRecord(FOO_ID, 5, options).message());
+
+        TOPIC_DELTA3 = new TopicDelta(TOPIC_DELTA2.apply());
+        TOPIC_DELTA3.replay(new PartitionChangeRecord().
+                setPartitionId(1).
+                setTopicId(FOO_ID).
+                setLeader(5).
+                setAddingReplicas(Collections.singletonList(5)));
     }
 
     @Test
@@ -197,5 +206,16 @@ public class ControllerMetricsChangesTest {
         assertEquals(1, changes.globalPartitionsChange());
         assertEquals(0, changes.offlinePartitionsChange());
         assertEquals(1, changes.partitionsWithoutPreferredLeaderChange());
+    }
+
+    @Test
+    public void testLeaderElectedFromAddingReplicaIsClean() {
+        ControllerMetricsChanges changes = new ControllerMetricsChanges();
+        changes.handleTopicChange(TOPIC_DELTA2.image(), TOPIC_DELTA3);
+        assertEquals(0, changes.globalTopicsChange());
+        assertEquals(0, changes.globalPartitionsChange());
+        assertEquals(0, changes.offlinePartitionsChange());
+        assertEquals(1, changes.partitionsWithoutPreferredLeaderChange());
+        assertEquals(0, changes.uncleanLeaderElection());
     }
 }
