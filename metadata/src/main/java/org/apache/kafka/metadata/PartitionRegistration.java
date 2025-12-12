@@ -165,8 +165,8 @@ public class PartitionRegistration {
     public final int leaderEpoch;
     public final int partitionEpoch;
 
-    public static boolean electionWasClean(int newLeader, int[] isr, int[] prevAddingReplicas) {
-        return newLeader == NO_LEADER || Replicas.contains(isr, newLeader) || Replicas.contains(prevAddingReplicas, newLeader);
+    public static boolean electionWasClean(int newLeader, int[] isr, int[] nextAddingReplicas) {
+        return newLeader == NO_LEADER || Replicas.contains(isr, newLeader) || Replicas.contains(nextAddingReplicas, newLeader);
     }
 
     private static List<Uuid> checkDirectories(PartitionRecord record) {
