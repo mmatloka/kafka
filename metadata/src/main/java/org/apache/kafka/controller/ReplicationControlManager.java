@@ -474,7 +474,7 @@ public class ReplicationControlManager {
         } else if (!newPartInfo.equals(prevPartInfo)) {
             log.info("Replayed PartitionRecord for existing partition {} and {}.", description,
                     newPartInfo);
-            newPartInfo.maybeLogPartitionChange(log, description, prevPartInfo, newPartInfo);
+            newPartInfo.maybeLogPartitionChange(log, description, prevPartInfo, newPartInfo.addingReplicas);
             topicInfo.parts.put(record.partitionId(), newPartInfo);
             updatePartitionInfo(record.topicId(), record.partitionId(), prevPartInfo, newPartInfo);
             updatePartitionDirectories(record.topicId(), record.partitionId(), prevPartInfo.directories, newPartInfo.directories);
@@ -526,7 +526,7 @@ public class ReplicationControlManager {
         updatePartitionDirectories(record.topicId(), record.partitionId(), prevPartitionInfo.directories, newPartitionInfo.directories);
         String topicPart = topicInfo.name + "-" + record.partitionId() + " with topic ID " +
             record.topicId();
-        newPartitionInfo.maybeLogPartitionChange(log, topicPart, prevPartitionInfo, newPartitionInfo);
+        newPartitionInfo.maybeLogPartitionChange(log, topicPart, prevPartitionInfo, newPartitionInfo.addingReplicas);
 
         if (newPartitionInfo.hasPreferredLeader()) {
             imbalancedPartitions.remove(new TopicIdPartition(record.topicId(), record.partitionId()));
